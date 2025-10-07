@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  halloween-radio-monitor:
+    build: .
+    container_name: halloween-radio-monitor
+    restart: unless-stopped
+    ports:
+      - "8731:8731"
+    environment:
+      - NODE_ENV=production
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+      - SPOTIFY_REDIRECT_URI=${SPOTIFY_REDIRECT_URI}
+      - SPOTIFY_REFRESH_TOKEN=${SPOTIFY_REFRESH_TOKEN}
+      - SIMILARITY_THRESHOLD=${SIMILARITY_THRESHOLD:-0.75}
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - halloween_radio_db:/app/data  # Dedicated volume for database persistence
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "--timeout=5", "http://localhost:8731/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  halloween_radio_db:
+    driver: local

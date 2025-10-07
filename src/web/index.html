@@ -1,0 +1,1958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halloween Radio Monitor</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎃</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-orange: #ff6b35;
+            --secondary-orange: #e55a2b;
+            --halloween-gold: #ffd700;
+            --dark-bg: #0d0d0d;
+            --card-bg: rgba(20, 20, 20, 0.8);
+            --border-color: rgba(255, 107, 53, 0.2);
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --text-muted: #999999;
+            --success-green: #4caf50;
+            --warning-amber: #ff9800;
+            --error-red: #f44336;
+            --spotify-green: #1db954;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --border-radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, #1a0f0a 50%, #2d1810 100%);
+            color: var(--text-primary);
+            height: 100vh;
+            padding: 16px;
+            line-height: 1.5;
+            overflow: hidden;
+        }
+        
+        .container {
+            max-width: 100%;
+            height: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 16px;
+            padding: 16px 24px;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow);
+            flex-shrink: 0;
+        }
+        
+        .header h1 {
+            color: var(--primary-orange);
+            font-size: clamp(1.5rem, 3vw, 2.2rem);
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-shadow: 0 4px 8px rgba(255, 107, 53, 0.3);
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 400;
+            margin-bottom: 12px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 16px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow: hidden;
+        }
+
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow: hidden;
+        }
+
+        .stats-section {
+            flex-shrink: 0;
+            margin-bottom: 16px;
+        }
+
+        .stats-header {
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            margin-bottom: 8px;
+        }
+
+        .stats-header h3 {
+            color: var(--primary-orange);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .stats-toggle {
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            background: rgba(255, 107, 53, 0.1);
+            border: 1px solid rgba(255, 107, 53, 0.3);
+            transition: var(--transition);
+        }
+
+        .stats-toggle:hover {
+            background: rgba(255, 107, 53, 0.2);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-shrink: 0;
+            transition: var(--transition);
+        }
+
+        .stats-grid.collapsed {
+            max-height: 0;
+            overflow: hidden;
+            margin-bottom: 0;
+            opacity: 0;
+        }
+
+        .tracks-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .card.tall {
+            flex: 1;
+        }
+
+        .card.compact {
+            flex: 1;
+        }
+
+        .card.compact.stations {
+            flex: 0.55; /* 55% of available space */
+        }
+
+        .card.compact.playlists {
+            flex: 0.45; /* 45% of available space */
+        }
+
+        .card:hover {
+            border-color: rgba(255, 107, 53, 0.4);
+        }
+        
+        .card h3 {
+            color: var(--primary-orange);
+            margin-bottom: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .card-content {
+            flex: 1;
+            overflow-y: auto;
+            margin: -4px;
+            padding: 4px;
+        }
+        
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 16px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            border-color: rgba(255, 107, 53, 0.4);
+        }
+        
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-orange);
+            margin-bottom: 4px;
+            line-height: 1;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .station-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            transition: var(--transition);
+        }
+        
+        .station-item:last-child {
+            border-bottom: none;
+        }
+
+        .station-item:hover {
+            padding-left: 4px;
+            background: rgba(255, 107, 53, 0.05);
+            border-radius: 4px;
+            margin: 0 -4px;
+        }
+        
+        .station-name {
+            font-weight: 600;
+            color: var(--halloween-gold);
+            font-size: 0.9rem;
+        }
+
+        .station-last-track {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            font-style: italic;
+            white-space: nowrap;
+            overflow: visible;
+            position: relative;
+            width: 100%;
+            display: block;
+        }
+
+        .marquee-container {
+            overflow: hidden;
+            width: 100%;
+            position: relative;
+            max-width: 100%;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .status-badge.connected {
+            background: linear-gradient(135deg, var(--success-green), #66bb6a);
+            color: white;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+        
+        .status-badge.disconnected {
+            background: linear-gradient(135deg, var(--error-red), #ef5350);
+            color: white;
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+        }
+
+        .playlist-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            transition: var(--transition);
+        }
+
+        .playlist-item:last-child {
+            border-bottom: none;
+        }
+
+        .playlist-item:hover {
+            padding-left: 4px;
+            background: rgba(29, 185, 84, 0.05);
+            border-radius: 4px;
+            margin: 0 -4px;
+        }
+        
+        .playlist-link {
+            color: var(--spotify-green);
+            text-decoration: none;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+        
+        .playlist-link:hover {
+            color: #1ed760;
+            transform: translateX(4px);
+        }
+        
+        .track-count {
+            background: linear-gradient(135deg, var(--primary-orange), var(--secondary-orange));
+            color: white;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: auto;
+            box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+        }
+
+        .track-count.matched {
+            background: linear-gradient(135deg, var(--success-green), #66bb6a);
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        }
+
+        .track-count.unmatched {
+            background: linear-gradient(135deg, var(--warning-amber), #ffb74d);
+            box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+        }
+
+        .filter-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
+        .filter-controls.inline {
+            margin: 0;
+            padding: 0;
+            background: none;
+            border: none;
+            border-radius: 0;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .filter-controls label {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .filter-controls input {
+            width: 50px;
+            padding: 2px 4px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-primary);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            transition: var(--transition);
+        }
+
+        .filter-controls input:focus {
+            outline: none;
+            border-color: var(--primary-orange);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary-orange), var(--secondary-orange));
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, var(--secondary-orange), #d64c1f);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.secondary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        }
+
+        .btn.secondary:hover {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        }
+
+        .btn.danger {
+            background: linear-gradient(135deg, var(--error-red), #c62828);
+        }
+
+        .btn.danger:hover {
+            background: linear-gradient(135deg, #c62828, #ad2323);
+        }
+
+        .btn.warning {
+            background: linear-gradient(135deg, var(--warning-amber), #f57c00);
+            color: #000;
+        }
+
+        .btn.compact {
+            padding: 4px 8px;
+            font-size: 0.75rem;
+        }
+
+        .station-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 12px;
+            padding: 4px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            flex-wrap: wrap;
+        }
+
+        .station-tab {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: var(--transition);
+            flex: 1;
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .station-tab:hover {
+            background: rgba(255, 107, 53, 0.1);
+            border-color: rgba(255, 107, 53, 0.3);
+            color: var(--text-primary);
+        }
+
+        .station-tab.active {
+            background: linear-gradient(135deg, var(--primary-orange), var(--secondary-orange));
+            color: white;
+            border-color: var(--primary-orange);
+            box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+        }
+        
+        .track-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            padding: 8px;
+            margin: 4px 0;
+            border-left: 3px solid var(--success-green);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .track-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.03), transparent);
+            pointer-events: none;
+        }
+
+        .track-item:hover {
+            transform: translateX(2px);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .track-item.unmatched {
+            border-left-color: var(--warning-amber);
+        }
+
+        .track-item.unmatched::before {
+            background: linear-gradient(135deg, rgba(255, 152, 0, 0.03), transparent);
+        }
+
+        .track-metadata {
+            font-weight: 600;
+            color: var(--halloween-gold);
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            line-height: 1.2;
+        }
+
+        .track-info {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .track-info span:last-child {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .track-icon {
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .track-spotify {
+            color: var(--spotify-green);
+            margin: 4px 0;
+            font-size: 0.8rem;
+            line-height: 1.2;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .track-spotify span:last-child {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .track-details {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+            padding-top: 4px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .percentage {
+            background: linear-gradient(135deg, var(--success-green), #66bb6a);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.7rem;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 6px rgba(76, 175, 80, 0.3);
+            flex-shrink: 0;
+        }
+
+        .percentage.low {
+            background: linear-gradient(135deg, var(--error-red), #ef5350);
+            box-shadow: 0 2px 6px rgba(244, 67, 54, 0.3);
+        }
+
+        .percentage.medium {
+            background: linear-gradient(135deg, var(--warning-amber), #ffb74d);
+            box-shadow: 0 2px 6px rgba(255, 152, 0, 0.3);
+        }
+
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin: 8px 0;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            flex-shrink: 0;
+        }
+
+        .page-info {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.8rem;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .logs-container {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: var(--border-radius);
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            overflow-y: auto;
+            flex: 1;
+        }
+        
+        .log-entry {
+            font-family: 'SF Mono', 'Monaco', 'Cascadia Code', 'Roboto Mono', monospace;
+            font-size: 0.75rem;
+            margin: 3px 0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            line-height: 1.3;
+            border-left: 2px solid transparent;
+        }
+        
+        .log-entry.info {
+            color: var(--success-green);
+            background: rgba(76, 175, 80, 0.05);
+            border-left-color: var(--success-green);
+        }
+        
+        .log-entry.warn {
+            color: var(--warning-amber);
+            background: rgba(255, 152, 0, 0.05);
+            border-left-color: var(--warning-amber);
+        }
+        
+        .log-entry.error {
+            color: var(--error-red);
+            background: rgba(244, 67, 54, 0.05);
+            border-left-color: var(--error-red);
+        }
+
+        .header-actions {
+            margin-top: 12px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+        }
+
+        .actions-dropdown {
+            position: relative;
+            display: inline-block;
+            z-index: 999999;
+        }
+
+        .actions-toggle {
+            background: linear-gradient(135deg, var(--primary-orange), var(--secondary-orange));
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 140px;
+            justify-content: center;
+        }
+
+        .actions-toggle:hover {
+            background: linear-gradient(135deg, var(--secondary-orange), #d64c1f);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+        }
+
+        .actions-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+            width: 220px;
+            z-index: 999999 !important;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            pointer-events: none;
+            transform: translateY(-10px);
+        }
+
+        .actions-menu.show {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .actions-menu .btn {
+            width: 100%;
+            margin: 0;
+            border-radius: 0;
+            text-align: left;
+            justify-content: flex-start;
+            padding: 12px 16px;
+            font-size: 0.85rem;
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .actions-menu .btn:first-child {
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+
+        .actions-menu .btn:last-child {
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            border-bottom: none;
+        }
+
+        .actions-menu .btn:hover {
+            transform: none;
+            background: rgba(255, 107, 53, 0.1);
+        }
+
+        .hamburger-menu {
+            display: none;
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 3000;
+        }
+
+        .hamburger-toggle {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .hamburger-toggle:hover {
+            border-color: rgba(255, 107, 53, 0.4);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .hamburger-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+        }
+
+        .hamburger-line {
+            width: 100%;
+            height: 2px;
+            background: var(--primary-orange);
+            transition: var(--transition);
+        }
+
+        .hamburger-toggle.active .hamburger-line:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+
+        .hamburger-toggle.active .hamburger-line:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger-toggle.active .hamburger-line:nth-child(3) {
+            transform: rotate(-45deg) translate(6px, -6px);
+        }
+
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 2500;
+            opacity: 0;
+            visibility: hidden;
+            transition: var(--transition);
+        }
+
+        .mobile-menu.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .mobile-menu-content {
+            position: absolute;
+            top: 60px;
+            right: 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow);
+            min-width: 200px;
+            max-width: calc(100vw - 32px);
+            padding: 8px;
+        }
+
+        .mobile-menu .btn {
+            width: 100%;
+            margin: 4px 0;
+            text-align: left;
+            justify-content: flex-start;
+            padding: 12px 16px;
+            font-size: 0.85rem;
+            border-radius: 8px;
+        }
+        
+        .last-updated {
+            text-align: center;
+            color: var(--text-muted);
+            margin-top: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 20px;
+            font-style: italic;
+        }
+
+        .empty-state-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            opacity: 0.5;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 107, 53, 0.3);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 107, 53, 0.5);
+        }
+
+        /* Responsive design */
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: 320px 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .left-panel {
+                flex-direction: row;
+                gap: 12px;
+                overflow-x: auto;
+                max-height: 200px;
+            }
+            
+            .left-panel .card {
+                min-width: 280px;
+                flex-shrink: 0;
+            }
+            
+            .tracks-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 8px;
+                overflow-y: auto;
+                height: auto;
+                min-height: 100vh;
+            }
+
+            .container {
+                height: auto;
+                min-height: 100vh;
+            }
+
+            .header {
+                padding: 12px 60px 12px 16px; /* Add right padding for hamburger */
+                margin-bottom: 12px;
+                position: relative;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .actions-dropdown {
+                display: none;
+            }
+
+            .hamburger-menu {
+                display: block;
+            }
+
+            .stats-header {
+                display: flex;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+                margin-bottom: 8px;
+            }
+
+            .stat-card {
+                padding: 10px 8px;
+            }
+
+            .stat-number {
+                font-size: 1.4rem;
+                margin-bottom: 2px;
+            }
+
+            .stat-label {
+                font-size: 0.65rem;
+                line-height: 1.1;
+            }
+
+            .dashboard-grid {
+                gap: 12px;
+            }
+
+            .left-panel {
+                flex-direction: column;
+                max-height: none;
+                gap: 8px;
+            }
+
+            .left-panel .card {
+                min-width: unset;
+            }
+
+            .card {
+                padding: 12px;
+            }
+
+            .card h3 {
+                font-size: 0.9rem;
+            }
+
+            .filter-controls {
+                flex-direction: row;
+                align-items: center;
+                gap: 6px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .filter-controls.inline {
+                margin-top: 6px;
+            }
+
+            .filter-group {
+                display: flex;
+                align-items: center;
+                gap: 3px;
+            }
+
+            .filter-controls label {
+                font-size: 0.7rem;
+                min-width: 30px;
+            }
+
+            .filter-controls input {
+                width: 40px;
+                padding: 2px 4px;
+                font-size: 0.7rem;
+            }
+
+            .filter-controls .btn.compact {
+                padding: 4px 8px;
+                font-size: 0.7rem;
+            }
+
+            .card h3 {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 6px;
+            }
+
+            .station-tabs {
+                gap: 2px;
+                margin-bottom: 8px;
+                padding: 2px;
+            }
+
+            .station-tab {
+                padding: 4px 6px;
+                font-size: 0.7rem;
+                min-width: 45px;
+            }
+
+            .track-item {
+                padding: 8px;
+                margin: 4px 0;
+            }
+
+            .track-metadata {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 3px;
+            }
+
+            .track-metadata .track-info {
+                width: 100%;
+                font-size: 0.8rem;
+            }
+
+            .track-info {
+                width: 100%;
+            }
+
+            .track-spotify {
+                font-size: 0.75rem;
+            }
+
+            .track-details {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 2px;
+                font-size: 0.7rem;
+            }
+
+            .station-last-track.marquee {
+                animation-duration: 20s;
+            }
+
+            .pagination-controls {
+                flex-wrap: wrap;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 4px;
+                margin-bottom: 6px;
+            }
+
+            .stat-card {
+                padding: 8px 6px;
+            }
+
+            .stat-number {
+                font-size: 1.2rem;
+            }
+
+            .stat-label {
+                font-size: 0.6rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 6px;
+            }
+
+            .header {
+                padding: 10px 50px 10px 12px; /* Adjust for smaller hamburger space */
+            }
+
+            .header h1 {
+                font-size: 1.3rem;
+            }
+
+            .hamburger-menu {
+                top: 12px;
+                right: 12px;
+            }
+
+            .hamburger-toggle {
+                padding: 8px;
+            }
+
+            .mobile-menu-content {
+                top: 50px;
+                right: 12px;
+                min-width: 180px;
+                max-width: calc(100vw - 24px);
+            }
+
+            .stats-grid {
+                gap: 3px;
+                margin-bottom: 4px;
+            }
+
+            .stat-card {
+                padding: 6px 4px;
+            }
+
+            .stat-number {
+                font-size: 1rem;
+            }
+
+            .stat-label {
+                font-size: 0.55rem;
+            }
+
+            .card {
+                padding: 10px;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tracks-container {
+                gap: 8px;
+            }
+
+            .btn {
+                padding: 6px 10px;
+                font-size: 0.8rem;
+            }
+
+            .filter-controls input {
+                width: 45px;
+                padding: 3px 5px;
+                font-size: 0.75rem;
+            }
+
+            .track-icon {
+                font-size: 0.8rem;
+            }
+
+            .percentage {
+                padding: 1px 4px;
+                font-size: 0.65rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎃 Halloween Radio Monitor</h1>
+            <p>Real-time monitoring dashboard for Halloween Radio stations</p>
+            
+            <!-- Desktop Actions Dropdown -->
+            <div class="header-actions">
+                <div class="actions-dropdown">
+                    <button class="actions-toggle" onclick="toggleActionsMenu()">
+                        ⚙️ Actions <span id="actionsArrow">▼</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions Menu - Moved outside header for proper z-index -->
+        <div class="actions-menu" id="actionsMenu">
+            <button class="btn" onclick="refreshData(); closeActionsMenu();">🔄 Refresh Data</button>
+            <button class="btn secondary" onclick="toggleAutoRefresh(); closeActionsMenu();">⏰ Auto-refresh</button>
+            <button class="btn warning" onclick="removeDuplicates(); closeActionsMenu();">🧹 Remove Duplicates</button>
+            <button class="btn danger" onclick="clearData(); closeActionsMenu();">🗑️ Clear Data</button>
+            <button class="btn danger" onclick="deleteAllPlaylists(); closeActionsMenu();">🗑️ Delete All Playlists</button>
+        </div>
+
+        <!-- Mobile Hamburger Menu -->
+        <div class="hamburger-menu">
+            <button class="hamburger-toggle" onclick="toggleMobileMenu()">
+                <div class="hamburger-icon">
+                    <div class="hamburger-line"></div>
+                    <div class="hamburger-line"></div>
+                    <div class="hamburger-line"></div>
+                </div>
+            </button>
+        </div>
+
+        <div class="mobile-menu" id="mobileMenu" onclick="closeMobileMenu(event)">
+            <div class="mobile-menu-content">
+                <button class="btn" onclick="refreshData(); closeMobileMenu();">🔄 Refresh Data</button>
+                <button class="btn secondary" onclick="toggleAutoRefresh(); closeMobileMenu();">⏰ Auto-refresh</button>
+                <button class="btn warning" onclick="removeDuplicates(); closeMobileMenu();">🧹 Remove Duplicates</button>
+                <button class="btn danger" onclick="clearData(); closeMobileMenu();">🗑️ Clear Data</button>
+                <button class="btn danger" onclick="deleteAllPlaylists(); closeMobileMenu();">🗑️ Delete All Playlists</button>
+            </div>
+        </div>
+
+        <div class="stats-section">
+            <div class="stats-header">
+                <h3>📊 Station Statistics</h3>
+                <button class="btn compact stats-toggle" onclick="toggleStats()">▼</button>
+            </div>
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card">
+                    <div class="stat-number" id="connectedStations">-</div>
+                    <div class="stat-label">Stations Connected</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="playlists">-</div>
+                    <div class="stat-label">Playlists Added</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalTracks">-</div>
+                    <div class="stat-label">Total Tracks Added</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="mainTracks">-</div>
+                    <div class="stat-label">Main Tracks</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="moviesTracks">-</div>
+                    <div class="stat-label">Movies Tracks</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="oldiesTracks">-</div>
+                    <div class="stat-label">Oldies Tracks</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="kidsTracks">-</div>
+                    <div class="stat-label">Kids Tracks</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="left-panel">
+                <div class="card compact stations">
+                    <h3>📻 Stations</h3>
+                    <div class="card-content" id="stations"></div>
+                </div>
+
+                <div class="card compact playlists">
+                    <h3>🎵 Playlists</h3>
+                    <div class="card-content" id="playlists-list"></div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="tracks-container">
+                    <div class="card tall">
+                        <h3>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                ✅ Matched 
+                                <span class="track-count matched" id="matchedCount">0</span>
+                            </div>
+                            <div class="filter-controls inline">
+                                <div class="filter-group">
+                                    <label>Min:</label>
+                                    <input type="number" id="matchedMinPercent" value="75" min="0" max="100">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Max:</label>
+                                    <input type="number" id="matchedMaxPercent" value="100" min="0" max="100">
+                                </div>
+                                <button class="btn compact" onclick="filterMatched()">Filter</button>
+                            </div>
+                        </h3>
+                        <div class="station-tabs" id="matchedStationTabs">
+                            <div class="station-tab active" onclick="filterMatchedByStation('all')">All</div>
+                            <div class="station-tab" onclick="filterMatchedByStation('main')">Main</div>
+                            <div class="station-tab" onclick="filterMatchedByStation('movies')">Movies</div>
+                            <div class="station-tab" onclick="filterMatchedByStation('oldies')">Oldies</div>
+                            <div class="station-tab" onclick="filterMatchedByStation('kids')">Kids</div>
+                        </div>
+                        <div class="card-content" id="matchedTracks"></div>
+                        <div class="pagination-controls" id="matchedPagination">
+                            <button class="btn secondary" onclick="changeMatchedPage(-1)">←</button>
+                            <span class="page-info" id="matchedPageInfo">1/1</span>
+                            <button class="btn secondary" onclick="changeMatchedPage(1)">→</button>
+                        </div>
+                    </div>
+
+                    <div class="card tall">
+                        <h3>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                ⚠️ Unmatched 
+                                <span class="track-count unmatched" id="unmatchedCount">0</span>
+                            </div>
+                            <div class="filter-controls inline">
+                                <div class="filter-group">
+                                    <label>Min:</label>
+                                    <input type="number" id="unmatchedMinPercent" value="0" min="0" max="100">
+                                </div>
+                                <div class="filter-group">
+                                    <label>Max:</label>
+                                    <input type="number" id="unmatchedMaxPercent" value="74" min="0" max="100">
+                                </div>
+                                <button class="btn compact" onclick="filterUnmatched()">Filter</button>
+                            </div>
+                        </h3>
+                        <div class="station-tabs" id="unmatchedStationTabs">
+                            <div class="station-tab active" onclick="filterUnmatchedByStation('all')">All</div>
+                            <div class="station-tab" onclick="filterUnmatchedByStation('main')">Main</div>
+                            <div class="station-tab" onclick="filterUnmatchedByStation('movies')">Movies</div>
+                            <div class="station-tab" onclick="filterUnmatchedByStation('oldies')">Oldies</div>
+                            <div class="station-tab" onclick="filterUnmatchedByStation('kids')">Kids</div>
+                        </div>
+                        <div class="card-content" id="unmatchedDetails"></div>
+                        <div class="pagination-controls" id="unmatchedPagination">
+                            <button class="btn secondary" onclick="changeUnmatchedPage(-1)">←</button>
+                            <span class="page-info" id="unmatchedPageInfo">1/1</span>
+                            <button class="btn secondary" onclick="changeUnmatchedPage(1)">→</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="last-updated" id="lastUpdated"></div>
+    </div>
+
+    <script>
+        let autoRefresh = true;
+        let refreshInterval;
+        
+        // Pagination variables
+        let matchedTracksData = [];
+        let unmatchedTracksData = [];
+        let matchedCurrentPage = 1;
+        let unmatchedCurrentPage = 1;
+        let matchedCurrentStation = 'all';
+        let unmatchedCurrentStation = 'all';
+        const tracksPerPage = 5;
+
+        async function fetchData() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                updateStatus(data);
+                
+                // Fetch detailed track data
+                await updateTrackDetails();
+                
+                document.getElementById('lastUpdated').textContent = 
+                    `Last updated: ${new Date().toLocaleTimeString()} • Auto-refresh: 15s`;
+            } catch (error) {
+                console.error('Failed to fetch data:', error);
+            }
+        }
+
+        async function updateTrackDetails() {
+            await filterMatched();
+            await filterUnmatched();
+        }
+
+        function toggleStats() {
+            const statsGrid = document.getElementById('statsGrid');
+            const toggleBtn = document.querySelector('.stats-toggle');
+            
+            if (statsGrid.classList.contains('collapsed')) {
+                statsGrid.classList.remove('collapsed');
+                toggleBtn.textContent = '▼';
+            } else {
+                statsGrid.classList.add('collapsed');
+                toggleBtn.textContent = '▶';
+            }
+        }
+
+        function toggleActionsMenu() {
+            const menu = document.getElementById('actionsMenu');
+            const arrow = document.getElementById('actionsArrow');
+            const toggle = document.querySelector('.actions-toggle');
+            
+            if (menu.classList.contains('show')) {
+                closeActionsMenu();
+            } else {
+                // Calculate position relative to button
+                const rect = toggle.getBoundingClientRect();
+                const menuWidth = 220; // Fixed width from CSS
+                
+                // Position below the button, centered
+                const top = rect.bottom + 4;
+                const left = rect.left + (rect.width / 2) - (menuWidth / 2);
+                
+                // Ensure menu doesn't go off screen
+                const adjustedLeft = Math.max(8, Math.min(left, window.innerWidth - menuWidth - 8));
+                
+                // Set position before showing to prevent fly-in effect
+                menu.style.top = top + 'px';
+                menu.style.left = adjustedLeft + 'px';
+                
+                // Force a reflow to ensure position is set
+                menu.offsetHeight;
+                
+                menu.classList.add('show');
+                arrow.textContent = '▲';
+            }
+        }
+
+        function closeActionsMenu() {
+            const menu = document.getElementById('actionsMenu');
+            const arrow = document.getElementById('actionsArrow');
+            menu.classList.remove('show');
+            arrow.textContent = '▼';
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            const toggle = document.querySelector('.hamburger-toggle');
+            
+            if (menu.classList.contains('show')) {
+                closeMobileMenu();
+            } else {
+                menu.classList.add('show');
+                toggle.classList.add('active');
+            }
+        }
+
+        function closeMobileMenu(event) {
+            if (event && event.target.closest('.mobile-menu-content')) {
+                return; // Don't close if clicking inside the menu content
+            }
+            
+            const menu = document.getElementById('mobileMenu');
+            const toggle = document.querySelector('.hamburger-toggle');
+            menu.classList.remove('show');
+            toggle.classList.remove('active');
+        }
+
+        // Close menus when clicking outside
+        document.addEventListener('click', function(event) {
+            const actionsToggle = document.querySelector('.actions-toggle');
+            const actionsMenu = document.getElementById('actionsMenu');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
+            // Close actions dropdown if clicking outside
+            if (!actionsToggle.contains(event.target) && !actionsMenu.contains(event.target)) {
+                closeActionsMenu();
+            }
+            
+            // Close mobile menu if clicking outside
+            if (!event.target.closest('.hamburger-menu') && !event.target.closest('.mobile-menu-content')) {
+                closeMobileMenu();
+            }
+        });
+
+        function getFilteredTracks(tracks, station) {
+            if (station === 'all') {
+                return tracks;
+            }
+            return tracks.filter(track => track.station.toLowerCase().includes(station.toLowerCase()));
+        }
+
+        function updateStationTabsActive(containerId, activeStation) {
+            const tabs = document.querySelectorAll(`#${containerId} .station-tab`);
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.textContent.toLowerCase() === activeStation || 
+                    (activeStation === 'all' && tab.textContent === 'All')) {
+                    tab.classList.add('active');
+                }
+            });
+        }
+
+        function updateStatus(data) {
+            // Update stats
+            const connectedCount = Object.values(data.stations).filter(s => s.connected).length;
+            document.getElementById('connectedStations').textContent = connectedCount;
+            document.getElementById('playlists').textContent = data.playlists ? data.playlists.length : 0;
+            document.getElementById('totalTracks').textContent = data.addedTracksCount || 0;
+
+            // Update individual station track counts
+            if (data.stationTrackCounts) {
+                document.getElementById('mainTracks').textContent = data.stationTrackCounts.main || 0;
+                document.getElementById('moviesTracks').textContent = data.stationTrackCounts.movies || 0;
+                document.getElementById('oldiesTracks').textContent = data.stationTrackCounts.oldies || 0;
+                document.getElementById('kidsTracks').textContent = data.stationTrackCounts.kids || 0;
+            } else {
+                document.getElementById('mainTracks').textContent = '-';
+                document.getElementById('moviesTracks').textContent = '-';
+                document.getElementById('oldiesTracks').textContent = '-';
+                document.getElementById('kidsTracks').textContent = '-';
+            }
+
+            // Update stations
+            const stationsHTML = Object.entries(data.stations).map(([name, station]) => {
+                const trackText = station.lastTrack ? `${station.lastTrack.artist} - ${station.lastTrack.title}` : '';
+                
+                return `
+                <div class="station-item">
+                    <div style="flex: 1; min-width: 0;">
+                        <div class="station-name">${name.charAt(0).toUpperCase() + name.slice(1)}</div>
+                        ${station.lastTrack ? `
+                            <div class="marquee-container">
+                                <div class="station-last-track" title="${trackText}">
+                                    Last: ${trackText}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <span class="status-badge ${station.connected ? 'connected' : 'disconnected'}">
+                        ${station.connected ? '🟢 Online' : '🔴 Offline'}
+                    </span>
+                </div>
+            `;
+            }).join('');
+            document.getElementById('stations').innerHTML = stationsHTML;
+
+            // Update playlists
+            const playlistsHTML = data.playlists ? data.playlists.map(playlist => `
+                <div class="playlist-item">
+                    <span class="station-name">${playlist.name}</span>
+                    <a href="${playlist.url}" target="_blank" class="playlist-link">🎵 Open</a>
+                </div>
+            `).join('') : '<div class="empty-state"><div class="empty-state-icon">🎵</div>No playlists found</div>';
+            document.getElementById('playlists-list').innerHTML = playlistsHTML;
+        }
+
+        function displayMatchedTracks(tracks) {
+            matchedTracksData = tracks || [];
+            
+            // Filter by selected station
+            const filteredTracks = getFilteredTracks(matchedTracksData, matchedCurrentStation);
+            
+            // Don't reset page if we're just refreshing the same data
+            if (matchedCurrentPage > Math.ceil(filteredTracks.length / tracksPerPage)) {
+                matchedCurrentPage = 1;
+            }
+            
+            if (filteredTracks.length === 0) {
+                document.getElementById('matchedTracks').innerHTML = '<div class="empty-state"><div class="empty-state-icon">✅</div>No matched tracks with current filter</div>';
+                // Always show pagination controls
+                const pagination = document.getElementById('matchedPagination');
+                pagination.style.display = 'flex';
+                document.getElementById('matchedPageInfo').textContent = '0/0';
+                const prevBtn = pagination.querySelector('button:first-child');
+                const nextBtn = pagination.querySelector('button:last-child');
+                prevBtn.disabled = true;
+                nextBtn.disabled = true;
+                return;
+            }
+
+            // Calculate pagination
+            const totalPages = Math.ceil(filteredTracks.length / tracksPerPage);
+            const startIndex = (matchedCurrentPage - 1) * tracksPerPage;
+            const endIndex = startIndex + tracksPerPage;
+            const currentPageTracks = filteredTracks.slice(startIndex, endIndex);
+
+            // Always show pagination controls
+            const pagination = document.getElementById('matchedPagination');
+            pagination.style.display = 'flex';
+            document.getElementById('matchedPageInfo').textContent = `${matchedCurrentPage}/${totalPages}`;
+            
+            const prevBtn = pagination.querySelector('button:first-child');
+            const nextBtn = pagination.querySelector('button:last-child');
+            prevBtn.disabled = matchedCurrentPage === 1;
+            nextBtn.disabled = matchedCurrentPage === totalPages;
+
+            const html = currentPageTracks.map(track => {
+                // Handle both old format (nested objects) and new format (flat fields)
+                const radioArtist = track.metadata?.artist || track.radio_artist || 'Unknown';
+                const radioTitle = track.metadata?.title || track.radio_title || 'Unknown';
+                const spotifyArtist = track.spotifyMatch?.artist || track.spotify_artist || 'Unknown';
+                const spotifyTitle = track.spotifyMatch?.title || track.spotify_title || 'Unknown';
+                const percentage = track.percentage || track.match_percentage || 0;
+                const playlistName = track.playlist || track.playlist_name || 'Unknown';
+                
+                const percentageClass = percentage >= 95 ? 'high' : percentage >= 90 ? 'medium' : 'low';
+                return `
+                    <div class="track-item">
+                        <div class="track-metadata">
+                            <div class="track-info">
+                                <span class="track-icon">📻</span> 
+                                <span>${radioArtist} - ${radioTitle}</span>
+                            </div>
+                            <span class="percentage ${percentageClass}">${percentage}%</span>
+                        </div>
+                        <div class="track-spotify">
+                            <span>🎵</span> 
+                            <span>${spotifyArtist} - ${spotifyTitle}</span>
+                        </div>
+                        <div class="track-details">
+                            <span>${track.station} → ${playlistName}</span>
+                            <span>${new Date(track.timestamp).toLocaleTimeString()}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('matchedTracks').innerHTML = html;
+        }
+
+        function displayUnmatchedTracks(tracks) {
+            unmatchedTracksData = tracks || [];
+            
+            // Filter by selected station
+            const filteredTracks = getFilteredTracks(unmatchedTracksData, unmatchedCurrentStation);
+            
+            // Don't reset page if we're just refreshing the same data
+            if (unmatchedCurrentPage > Math.ceil(filteredTracks.length / tracksPerPage)) {
+                unmatchedCurrentPage = 1;
+            }
+            
+            if (filteredTracks.length === 0) {
+                document.getElementById('unmatchedDetails').innerHTML = '<div class="empty-state"><div class="empty-state-icon">⚠️</div>No unmatched tracks with current filter</div>';
+                // Always show pagination controls
+                const pagination = document.getElementById('unmatchedPagination');
+                pagination.style.display = 'flex';
+                document.getElementById('unmatchedPageInfo').textContent = '0/0';
+                const prevBtn = pagination.querySelector('button:first-child');
+                const nextBtn = pagination.querySelector('button:last-child');
+                prevBtn.disabled = true;
+                nextBtn.disabled = true;
+                return;
+            }
+
+            // Calculate pagination
+            const totalPages = Math.ceil(filteredTracks.length / tracksPerPage);
+            const startIndex = (unmatchedCurrentPage - 1) * tracksPerPage;
+            const endIndex = startIndex + tracksPerPage;
+            const currentPageTracks = filteredTracks.slice(startIndex, endIndex);
+
+            // Always show pagination controls
+            const pagination = document.getElementById('unmatchedPagination');
+            pagination.style.display = 'flex';
+            document.getElementById('unmatchedPageInfo').textContent = `${unmatchedCurrentPage}/${totalPages}`;
+            
+            const prevBtn = pagination.querySelector('button:first-child');
+            const nextBtn = pagination.querySelector('button:last-child');
+            prevBtn.disabled = unmatchedCurrentPage === 1;
+            nextBtn.disabled = unmatchedCurrentPage === totalPages;
+
+            const html = currentPageTracks.map(track => {
+                // Handle both old format (nested objects) and new format (flat fields)
+                const radioArtist = track.metadata?.artist || track.radio_artist || 'Unknown';
+                const radioTitle = track.metadata?.title || track.radio_title || 'Unknown';
+                const spotifyArtist = track.spotifyMatch?.artist || track.best_spotify_artist;
+                const spotifyTitle = track.spotifyMatch?.title || track.best_spotify_title;
+                const percentage = track.percentage || track.best_match_percentage || 0;
+                
+                const percentageClass = percentage >= 80 ? 'medium' : percentage >= 60 ? 'low' : '';
+                return `
+                    <div class="track-item unmatched">
+                        <div class="track-metadata">
+                            <div class="track-info">
+                                <span class="track-icon">📻</span> 
+                                <span>${radioArtist} - ${radioTitle}</span>
+                            </div>
+                            ${percentage > 0 ? `<span class="percentage ${percentageClass}">${percentage}%</span>` : '<span style="color: var(--text-muted); font-size: 0.8rem;">No Match</span>'}
+                        </div>
+                        ${(spotifyArtist && spotifyTitle) ? `
+                            <div class="track-spotify">
+                                <span>🎵</span> 
+                                <span>Best: ${spotifyArtist} - ${spotifyTitle}</span>
+                            </div>
+                        ` : `
+                            <div style="color: var(--text-muted); font-style: italic; margin: 8px 0; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+                                <span>🔍</span> 
+                                <span>${track.reason}</span>
+                            </div>
+                        `}
+                        <div class="track-details">
+                            <span>${track.station}</span>
+                            <span>${new Date(track.timestamp).toLocaleTimeString()}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('unmatchedDetails').innerHTML = html;
+        }
+
+        async function filterMatched() {
+            const minPercent = document.getElementById('matchedMinPercent').value;
+            const maxPercent = document.getElementById('matchedMaxPercent').value;
+            
+            const response = await fetch(`/api/tracks/matched?minPercentage=${minPercent}&maxPercentage=${maxPercent}`);
+            const data = await response.json();
+            matchedCurrentPage = 1; // Reset to first page when filtering
+            displayMatchedTracks(data.tracks);
+            document.getElementById('matchedCount').textContent = data.total;
+        }
+
+        async function filterUnmatched() {
+            const minPercent = document.getElementById('unmatchedMinPercent').value;
+            const maxPercent = document.getElementById('unmatchedMaxPercent').value;
+            
+            const response = await fetch(`/api/tracks/unmatched?minPercentage=${minPercent}&maxPercentage=${maxPercent}`);
+            const data = await response.json();
+            unmatchedCurrentPage = 1; // Reset to first page when filtering
+            displayUnmatchedTracks(data.tracks);
+            document.getElementById('unmatchedCount').textContent = data.total;
+        }
+
+        function filterMatchedByStation(station) {
+            matchedCurrentStation = station;
+            matchedCurrentPage = 1;
+            updateStationTabsActive('matchedStationTabs', station);
+            displayMatchedTracks(matchedTracksData);
+        }
+
+        function filterUnmatchedByStation(station) {
+            unmatchedCurrentStation = station;
+            unmatchedCurrentPage = 1;
+            updateStationTabsActive('unmatchedStationTabs', station);
+            displayUnmatchedTracks(unmatchedTracksData);
+        }
+
+        function changeMatchedPage(direction) {
+            const filteredTracks = getFilteredTracks(matchedTracksData, matchedCurrentStation);
+            const totalPages = Math.ceil(filteredTracks.length / tracksPerPage);
+            const newPage = matchedCurrentPage + direction;
+            
+            if (newPage >= 1 && newPage <= totalPages) {
+                matchedCurrentPage = newPage;
+                displayMatchedTracks(matchedTracksData);
+            }
+        }
+
+        function changeUnmatchedPage(direction) {
+            const filteredTracks = getFilteredTracks(unmatchedTracksData, unmatchedCurrentStation);
+            const totalPages = Math.ceil(filteredTracks.length / tracksPerPage);
+            const newPage = unmatchedCurrentPage + direction;
+            
+            if (newPage >= 1 && newPage <= totalPages) {
+                unmatchedCurrentPage = newPage;
+                displayUnmatchedTracks(unmatchedTracksData);
+            }
+        }
+
+        function refreshData() {
+            fetchData();
+        }
+
+        function toggleAutoRefresh() {
+            autoRefresh = !autoRefresh;
+            const btn = event.target;
+            
+            if (autoRefresh) {
+                btn.textContent = '⏰ Auto-refresh';
+                refreshInterval = setInterval(fetchData, 15000);
+            } else {
+                btn.textContent = '▶️ Start Auto-refresh';
+                clearInterval(refreshInterval);
+            }
+        }
+
+        async function removeDuplicates() {
+            if (!confirm('🧹 Remove Duplicate Tracks\n\nThis will scan all Halloween Radio playlists and remove duplicate tracks within each playlist.\n\nThis is safe and will not delete unique tracks.\n\nContinue?')) {
+                return;
+            }
+            
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '🧹 Cleaning...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/playlists/remove-duplicates', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    let message = `✅ ${result.message}`;
+                    if (result.removedCount > 0) {
+                        message += `\n\n🗑️ Removed ${result.removedCount} duplicate tracks across all playlists`;
+                        if (result.details && result.details.length > 0) {
+                            message += '\n\nDetails:\n' + result.details.join('\n');
+                        }
+                    } else {
+                        message += '\n\n🎉 No duplicates found! Your playlists are already clean.';
+                    }
+                    alert(message);
+                    refreshData(); // Refresh the UI
+                } else {
+                    alert(`❌ Error: ${result.error}`);
+                }
+            } catch (error) {
+                alert(`❌ Failed to remove duplicates: ${error.message}`);
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function clearData() {
+            if (!confirm('🗑️ Clear All Data\n\nThis will permanently clear:\n• All tracked song history\n• Matched/unmatched records\n• Log files\n• Restart tracking from scratch\n\n⚠️ This action cannot be undone!\n\nContinue?')) {
+                return;
+            }
+            
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '🗑️ Clearing...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/data/clear', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    let message = `✅ ${result.message}`;
+                    if (result.details && result.details.length > 0) {
+                        message += '\n\nCompleted:\n' + result.details.join('\n');
+                    }
+                    alert(message);
+                    refreshData(); // Refresh the UI
+                } else {
+                    alert(`❌ Error: ${result.error}`);
+                }
+            } catch (error) {
+                alert(`❌ Failed to clear data: ${error.message}`);
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function deleteAllPlaylists() {
+            if (!confirm('⚠️ DANGER: DELETE ALL HALLOWEEN RADIO PLAYLISTS ⚠️\n\nThis will permanently delete ALL Halloween Radio playlists from your Spotify account!\n\nThis action CANNOT be undone!\n\nAre you absolutely sure?')) {
+                return;
+            }
+            
+            // Second confirmation for safety
+            if (!confirm('🚨 FINAL WARNING 🚨\n\nYou are about to delete ALL Halloween Radio playlists.\n\nType YES in the next dialog to confirm.')) {
+                return;
+            }
+            
+            const userConfirmation = prompt('Type "DELETE ALL" to confirm (case sensitive):');
+            if (userConfirmation !== 'DELETE ALL') {
+                alert('❌ Confirmation failed. Operation cancelled.');
+                return;
+            }
+            
+            // Ask if user wants to recreate empty playlists
+            const recreate = confirm('🎵 Would you like to recreate empty playlists after deletion?\n\nClick OK to recreate empty playlists\nClick Cancel to delete without recreating');
+            
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '🗑️ Deleting...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch(`/api/playlists/delete-all?recreate=${recreate}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    let message = `✅ ${result.message}\n\nDeleted playlists:\n${result.deleted.join('\n')}`;
+                    if (recreate && result.recreated) {
+                        message += `\n\n🎵 Recreated empty playlists:\n${result.recreated.join('\n')}`;
+                    }
+                    alert(message);
+                    refreshData(); // Refresh the UI
+                } else {
+                    alert(`❌ Error: ${result.error}`);
+                }
+            } catch (error) {
+                alert(`❌ Failed to delete playlists: ${error.message}`);
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // Initial load
+        fetchData();
+        
+        // Auto-refresh every 15 seconds
+        refreshInterval = setInterval(fetchData, 15000);
+
+        // Auto-collapse stats on mobile ONLY if screen is very small
+        if (window.innerWidth <= 600) {
+            const statsGrid = document.getElementById('statsGrid');
+            const toggleBtn = document.querySelector('.stats-toggle');
+            statsGrid.classList.add('collapsed');
+            toggleBtn.textContent = '▶';
+        }
+
+        // Initialize menu position to prevent fly-in effect
+        const menu = document.getElementById('actionsMenu');
+        const toggle = document.querySelector('.actions-toggle');
+        if (menu && toggle) {
+            const rect = toggle.getBoundingClientRect();
+            const menuWidth = 220;
+            const top = rect.bottom + 4;
+            const left = rect.left + (rect.width / 2) - (menuWidth / 2);
+            const adjustedLeft = Math.max(8, Math.min(left, window.innerWidth - menuWidth - 8));
+            
+            menu.style.top = top + 'px';
+            menu.style.left = adjustedLeft + 'px';
+        }
+    </script>
+</body>
+</html>

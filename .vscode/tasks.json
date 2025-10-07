@@ -1,0 +1,21 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Start Halloween Radio Monitor",
+			"type": "shell",
+			"command": "npm start",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Authorize Spotify",
+			"type": "shell",
+			"command": "npm run auth",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		}
+	]
+}
