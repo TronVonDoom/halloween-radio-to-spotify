@@ -963,6 +963,18 @@ class SpotifyService {
     }
   }
 
+  async saveData() {
+    try {
+      // Data is automatically saved to database, so this is just a placeholder
+      // for any additional data persistence needs
+      logger.info('💾 Data save checkpoint completed');
+      return true;
+    } catch (error) {
+      logger.error('❌ Error saving data:', error);
+      throw error;
+    }
+  }
+
   async close() {
     if (this.database) {
       await this.database.close();
