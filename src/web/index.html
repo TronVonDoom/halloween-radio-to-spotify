@@ -1208,6 +1208,9 @@
         <div class="header">
             <h1>🎃 Halloween Radio Monitor</h1>
             <p>Real-time monitoring dashboard for Halloween Radio stations</p>
+            <div class="version-info" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+                Version: <span id="version-number">Loading...</span>
+            </div>
             
             <!-- Desktop Actions Dropdown -->
             <div class="header-actions">
@@ -1391,6 +1394,11 @@
                 const response = await fetch('/api/status');
                 const data = await response.json();
                 updateStatus(data);
+                
+                // Update version display
+                if (data.version) {
+                    document.getElementById('version-number').textContent = data.version;
+                }
                 
                 // Fetch detailed track data
                 await updateTrackDetails();

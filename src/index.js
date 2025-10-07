@@ -3,6 +3,7 @@ const RadioMonitor = require('./services/RadioMonitor');
 const SpotifyService = require('./services/SpotifyService');
 const WebInterface = require('./services/WebInterface');
 const logger = require('./utils/logger');
+const packageInfo = require('../package.json');
 
 class HalloweenRadioApp {
   constructor() {
@@ -15,7 +16,7 @@ class HalloweenRadioApp {
 
   async initialize() {
     try {
-      logger.info('🎃 Starting Halloween Radio to Spotify Monitor...');
+      logger.info(`🎃 Starting Halloween Radio to Spotify Monitor v${packageInfo.version}...`);
       
       // Initialize Spotify service
       await this.spotifyService.initialize();
@@ -59,8 +60,9 @@ class HalloweenRadioApp {
         });
       }, 5 * 60 * 1000); // 5 minutes
       
-      logger.info('🎵 Halloween Radio monitoring started successfully');
+      logger.info(`🎵 Halloween Radio monitoring v${packageInfo.version} started successfully`);
       logger.info('📻 Monitoring all 4 stations for new tracks...');
+      logger.info(`📊 Version: ${packageInfo.version} | Build: ${new Date().toISOString()}`);
       
     } catch (error) {
       logger.error('❌ Failed to start monitoring:', error);

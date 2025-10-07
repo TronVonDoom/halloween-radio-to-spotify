@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs').promises;
 const logger = require('../utils/logger');
+const packageInfo = require('../../package.json');
 
 class WebInterface {
   constructor(radioMonitor, spotifyService) {
@@ -39,6 +40,7 @@ class WebInterface {
       
       res.json({
         ...status,
+        version: packageInfo.version,
         playlists: Array.from(this.spotifyService.playlists.entries()).map(([name, playlist]) => ({
           name: name.charAt(0).toUpperCase() + name.slice(1),
           id: playlist.id,
