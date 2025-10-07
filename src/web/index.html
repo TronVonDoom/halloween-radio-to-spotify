@@ -1208,9 +1208,6 @@
         <div class="header">
             <h1>🎃 Halloween Radio Monitor</h1>
             <p>Real-time monitoring dashboard for Halloween Radio stations</p>
-            <div class="version-info" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
-                Version: <span id="version-number">Loading...</span>
-            </div>
             
             <!-- Desktop Actions Dropdown -->
             <div class="header-actions">
@@ -1374,6 +1371,9 @@
         </div>
 
         <div class="last-updated" id="lastUpdated"></div>
+        <div class="version-info" style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 8px; padding: 8px;">
+            Version: <span id="version-number">Loading...</span>
+        </div>
     </div>
 
     <script>
@@ -1404,7 +1404,7 @@
                 await updateTrackDetails();
                 
                 document.getElementById('lastUpdated').textContent = 
-                    `Last updated: ${new Date().toLocaleTimeString()} • Auto-refresh: 15s`;
+                    `Last updated: ${new Date().toLocaleTimeString()} • Auto-refresh: 5s`;
             } catch (error) {
                 console.error('Failed to fetch data:', error);
             }
@@ -1800,7 +1800,7 @@
             
             if (autoRefresh) {
                 btn.textContent = '⏰ Auto-refresh';
-                refreshInterval = setInterval(fetchData, 15000);
+                refreshInterval = setInterval(fetchData, 5000);
             } else {
                 btn.textContent = '▶️ Start Auto-refresh';
                 clearInterval(refreshInterval);
@@ -1937,8 +1937,8 @@
         // Initial load
         fetchData();
         
-        // Auto-refresh every 15 seconds
-        refreshInterval = setInterval(fetchData, 15000);
+        // Auto-refresh every 5 seconds
+        refreshInterval = setInterval(fetchData, 5000);
 
         // Auto-collapse stats on mobile ONLY if screen is very small
         if (window.innerWidth <= 600) {

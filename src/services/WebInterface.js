@@ -93,7 +93,7 @@ class WebInterface {
         }));
         
         res.json({ 
-          tracks: formattedTracks.reverse(), // Most recent first
+          tracks: formattedTracks, // Database already orders by timestamp DESC (newest first)
           total: total,
           limit: limit,
           offset: offset
@@ -133,7 +133,7 @@ class WebInterface {
         }));
         
         res.json({ 
-          tracks: formattedTracks.reverse(), // Most recent first
+          tracks: formattedTracks, // Database already orders by timestamp DESC (newest first)
           total: tracks.length,
           limit: limit,
           offset: offset
