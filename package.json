@@ -1,6 +1,6 @@
 {
   "name": "halloween-radio-to-spotify",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Monitors Halloween Radio stations and automatically adds tracks to Spotify playlists",
   "main": "src/index.js",
   "scripts": {
