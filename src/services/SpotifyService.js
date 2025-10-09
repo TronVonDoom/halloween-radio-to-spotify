@@ -975,6 +975,55 @@ class SpotifyService {
     }
   }
 
+  async getLastMatchedTrackTimestamp() {
+    try {
+      const query = `
+        SELECT timestamp 
+        FROM tracks 
+        WHERE status = 'matched' 
+        ORDER BY timestamp DESC 
+        LIMIT 1
+      `;
+      const result = await this.database.get(query);
+      return result ? result.timestamp : null;
+    } catch (error) {
+      logger.error('❌ Error getting last matched track timestamp:', error);
+      return null;
+    }
+  }
+
+  async getUnmatchedTrackCounts() {
+    try {
+      const totalQuery = `
+        SELECT COUNT(*) as count 
+        FROM tracks 
+        WHERE status = 'unmatched'
+      `;
+      const totalResult = await this.database.get(totalQuery);
+      
+      const stationQuery = `
+        SELECT station, COUNT(*) as count 
+        FROM tracks 
+        WHERE status = 'unmatched' 
+        GROUP BY station
+      `;
+      const stationResults = await this.database.all(stationQuery);
+      
+      const stationCounts = {};
+      stationResults.forEach(row => {
+        stationCounts[row.station] = row.count;
+      });
+      
+      return {
+        total: totalResult ? totalResult.count : 0,
+        byStation: stationCounts
+      };
+    } catch (error) {
+      logger.error('❌ Error getting unmatched track counts:', error);
+      return { total: 0, byStation: {} };
+    }
+  }
+
   async close() {
     if (this.database) {
       await this.database.close();

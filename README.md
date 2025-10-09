@@ -126,6 +126,38 @@ The application automatically creates these Spotify playlists:
 - **Resource Optimized**: Alpine Linux base image for minimal size
 - **Auto-Restart**: Container automatically restarts if it crashes
 
+### Unraid Deployment
+
+For Unraid servers, ensure data persistence with these volume mappings:
+
+```bash
+# Volume Mappings (Critical for Data Persistence)
+Container Path: /app/data  →  Host Path: /mnt/user/appdata/halloween-radio-monitor/data
+Container Path: /app/logs  →  Host Path: /mnt/user/appdata/halloween-radio-monitor/logs
+
+# Environment Variables
+SPOTIFY_CLIENT_ID=your_client_id
+SPOTIFY_CLIENT_SECRET=your_client_secret
+SPOTIFY_REDIRECT_URI=http://your-unraid-ip:8731/callback
+SPOTIFY_REFRESH_TOKEN=your_refresh_token
+NODE_ENV=production
+SIMILARITY_THRESHOLD=0.75
+```
+
+**Update Procedure for Unraid:**
+```bash
+# SSH into Unraid server
+cd /mnt/user/appdata/halloween-radio-monitor
+git pull origin main
+docker stop halloween-radio-monitor
+docker rm halloween-radio-monitor
+docker rmi halloween-radio-monitor:latest
+docker build --no-cache -t halloween-radio-monitor:latest .
+# Recreate container in Unraid WebUI - your data will be preserved!
+```
+
+**Data Preservation Guarantee**: The database and logs are stored in mapped volumes, so all your track history, playlists, and analytics are preserved across container updates.
+
 ### Docker Management
 
 ```bash

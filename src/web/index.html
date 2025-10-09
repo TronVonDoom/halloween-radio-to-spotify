@@ -1264,24 +1264,32 @@
                     <div class="stat-label">Playlists Added</div>
                 </div>
                 <div class="stat-card">
+                    <div class="stat-number" id="lastMatched">-</div>
+                    <div class="stat-label">Last Matched Track</div>
+                </div>
+                <div class="stat-card">
                     <div class="stat-number" id="totalTracks">-</div>
                     <div class="stat-label">Total Tracks Added</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number" id="mainTracks">-</div>
-                    <div class="stat-label">Main Tracks</div>
+                    <div class="stat-number" id="totalUnmatched">-</div>
+                    <div class="stat-label">Total Tracks Unmatched</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number" id="moviesTracks">-</div>
-                    <div class="stat-label">Movies Tracks</div>
+                    <div class="stat-number" id="mainTracks">- | -</div>
+                    <div class="stat-label">Main Tracks | Unmatched</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number" id="oldiesTracks">-</div>
-                    <div class="stat-label">Oldies Tracks</div>
+                    <div class="stat-number" id="moviesTracks">- | -</div>
+                    <div class="stat-label">Movies Tracks | Unmatched</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number" id="kidsTracks">-</div>
-                    <div class="stat-label">Kids Tracks</div>
+                    <div class="stat-number" id="oldiesTracks">- | -</div>
+                    <div class="stat-label">Oldies Tracks | Unmatched</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="kidsTracks">- | -</div>
+                    <div class="stat-label">Kids Tracks | Unmatched</div>
                 </div>
             </div>
         </div>
@@ -1370,9 +1378,11 @@
             </div>
         </div>
 
-        <div class="last-updated" id="lastUpdated"></div>
-        <div class="version-info" style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 8px; padding: 8px;">
-            Version: <span id="version-number">Loading...</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; border-top: 1px solid var(--border-color);">
+            <div class="version-info" style="font-size: 0.8rem; color: var(--text-muted);">
+                Version: <span id="version-number">Loading...</span>
+            </div>
+            <div class="last-updated" id="lastUpdated"></div>
         </div>
     </div>
 
@@ -1530,18 +1540,52 @@
             document.getElementById('connectedStations').textContent = connectedCount;
             document.getElementById('playlists').textContent = data.playlists ? data.playlists.length : 0;
             document.getElementById('totalTracks').textContent = data.addedTracksCount || 0;
-
-            // Update individual station track counts
-            if (data.stationTrackCounts) {
-                document.getElementById('mainTracks').textContent = data.stationTrackCounts.main || 0;
-                document.getElementById('moviesTracks').textContent = data.stationTrackCounts.movies || 0;
-                document.getElementById('oldiesTracks').textContent = data.stationTrackCounts.oldies || 0;
-                document.getElementById('kidsTracks').textContent = data.stationTrackCounts.kids || 0;
+            
+            // Update unmatched counts
+            if (data.unmatchedTrackCounts) {
+                document.getElementById('totalUnmatched').textContent = data.unmatchedTrackCounts.total || 0;
             } else {
-                document.getElementById('mainTracks').textContent = '-';
-                document.getElementById('moviesTracks').textContent = '-';
-                document.getElementById('oldiesTracks').textContent = '-';
-                document.getElementById('kidsTracks').textContent = '-';
+                document.getElementById('totalUnmatched').textContent = '-';
+            }
+            
+            // Update last matched track timestamp
+            if (data.lastMatchedTrackTimestamp) {
+                const lastMatchedDate = new Date(data.lastMatchedTrackTimestamp);
+                const now = new Date();
+                const diffMs = now - lastMatchedDate;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMins / 60);
+                const diffDays = Math.floor(diffHours / 24);
+                
+                let timeAgo;
+                if (diffDays > 0) {
+                    timeAgo = `${diffDays}d ago`;
+                } else if (diffHours > 0) {
+                    timeAgo = `${diffHours}h ago`;
+                } else if (diffMins > 0) {
+                    timeAgo = `${diffMins}m ago`;
+                } else {
+                    timeAgo = 'Just now';
+                }
+                document.getElementById('lastMatched').textContent = timeAgo;
+            } else {
+                document.getElementById('lastMatched').textContent = 'Never';
+            }
+
+            // Update individual station track counts with unmatched
+            if (data.stationTrackCounts && data.unmatchedTrackCounts) {
+                const matched = data.stationTrackCounts;
+                const unmatched = data.unmatchedTrackCounts.byStation || {};
+                
+                document.getElementById('mainTracks').textContent = `${matched.main || 0} | ${unmatched.main || 0}`;
+                document.getElementById('moviesTracks').textContent = `${matched.movies || 0} | ${unmatched.movies || 0}`;
+                document.getElementById('oldiesTracks').textContent = `${matched.oldies || 0} | ${unmatched.oldies || 0}`;
+                document.getElementById('kidsTracks').textContent = `${matched.kids || 0} | ${unmatched.kids || 0}`;
+            } else {
+                document.getElementById('mainTracks').textContent = '- | -';
+                document.getElementById('moviesTracks').textContent = '- | -';
+                document.getElementById('oldiesTracks').textContent = '- | -';
+                document.getElementById('kidsTracks').textContent = '- | -';
             }
 
             // Update stations

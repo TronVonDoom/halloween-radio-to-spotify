@@ -1,0 +1,8 @@
+# On your Unraid server:
+cd /mnt/user/appdata/halloween-radio-to-spotify
+git pull origin main
+docker stop halloween-radio-monitor
+docker rm halloween-radio-monitor
+docker rmi halloween-radio-monitor:latest
+docker build --no-cache -t halloween-radio-monitor:latest .
+# Then create new container in Unraid WebUI

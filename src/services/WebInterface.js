@@ -38,6 +38,12 @@ class WebInterface {
       // Get database stats
       const systemStats = await this.spotifyService.getSystemStats();
       
+      // Get last matched track timestamp
+      const lastMatchedTimestamp = await this.spotifyService.getLastMatchedTrackTimestamp();
+      
+      // Get unmatched track counts
+      const unmatchedCounts = await this.spotifyService.getUnmatchedTrackCounts();
+      
       res.json({
         ...status,
         version: packageInfo.version,
@@ -48,6 +54,8 @@ class WebInterface {
         })),
         addedTracksCount: totalTrackCount,
         stationTrackCounts: stationTrackCounts,
+        unmatchedTrackCounts: unmatchedCounts,
+        lastMatchedTrackTimestamp: lastMatchedTimestamp,
         databaseStats: systemStats
       });
     });
@@ -106,11 +114,10 @@ class WebInterface {
 
     this.app.get('/api/tracks/unmatched', async (req, res) => {
       try {
-        const limit = parseInt(req.query.limit) || 50;
-        const offset = parseInt(req.query.offset) || 0;
+        // Remove pagination for unmatched tracks - show all
         const station = req.query.station || null;
         
-        const tracks = await this.spotifyService.getUnmatchedTracks(limit, offset, station);
+        const tracks = await this.spotifyService.getUnmatchedTracks(null, 0, station);
         
         // Convert database format to web interface format for compatibility
         const formattedTracks = tracks.map(track => ({
@@ -135,8 +142,7 @@ class WebInterface {
         res.json({ 
           tracks: formattedTracks, // Database already orders by timestamp DESC (newest first)
           total: tracks.length,
-          limit: limit,
-          offset: offset
+          showingAll: true // Indicate we're showing all unmatched tracks
         });
       } catch (error) {
         logger.error('❌ Error getting unmatched tracks:', error);
