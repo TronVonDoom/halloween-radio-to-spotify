@@ -17,6 +17,7 @@ class SpotifyService {
     this.playlists = new Map();
     this.playlistTrackCounts = new Map(); // Station name -> track count
     this.similarityThreshold = parseFloat(process.env.SIMILARITY_THRESHOLD) || 0.9;
+    this.tokenRefreshInterval = null; // Store the interval ID
   }
 
   async initialize() {
@@ -35,12 +36,15 @@ class SpotifyService {
       }
       
       // Get user profile
-      const userProfile = await this.spotifyApi.getMe();
+      const userProfile = await this.makeSpotifyRequest(this.spotifyApi.getMe);
       this.userId = userProfile.body.id;
       logger.info(`✅ Authenticated as Spotify user: ${userProfile.body.display_name}`);
       
       // Create/find playlists
       await this.setupPlaylists();
+      
+      // Start periodic token refresh (every 50 minutes, tokens expire after 60 minutes)
+      this.startTokenRefreshTimer();
       
       logger.info('✅ Spotify service initialized successfully');
       
@@ -78,9 +82,62 @@ class SpotifyService {
       }
       
       logger.info('✅ Spotify access token refreshed');
+      return true;
     } catch (error) {
       logger.error('❌ Failed to refresh access token:', error);
       throw error;
+    }
+  }
+
+  async makeSpotifyRequest(requestFn, ...args) {
+    try {
+      return await requestFn.apply(this.spotifyApi, args);
+    } catch (error) {
+      // Check if the error is due to expired access token
+      if (error.statusCode === 401 || 
+          (error.body && error.body.error && error.body.error.message === 'The access token expired')) {
+        logger.info('🔄 Access token expired, attempting to refresh...');
+        
+        try {
+          await this.refreshAccessToken();
+          // Retry the original request
+          return await requestFn.apply(this.spotifyApi, args);
+        } catch (refreshError) {
+          logger.error('❌ Failed to refresh token and retry request:', refreshError);
+          throw refreshError;
+        }
+      }
+      
+      // If it's not a token expiration error, re-throw the original error
+      throw error;
+    }
+  }
+
+  startTokenRefreshTimer() {
+    // Clear existing timer if any
+    if (this.tokenRefreshInterval) {
+      clearInterval(this.tokenRefreshInterval);
+    }
+    
+    // Refresh token every 50 minutes (3000000 ms) - tokens expire after 60 minutes
+    this.tokenRefreshInterval = setInterval(async () => {
+      try {
+        logger.info('🔄 Performing periodic token refresh...');
+        await this.refreshAccessToken();
+      } catch (error) {
+        logger.error('❌ Periodic token refresh failed:', error.message);
+        // Don't throw error here as it would crash the timer
+      }
+    }, 50 * 60 * 1000); // 50 minutes
+    
+    logger.info('⏰ Started periodic token refresh timer (every 50 minutes)');
+  }
+
+  stopTokenRefreshTimer() {
+    if (this.tokenRefreshInterval) {
+      clearInterval(this.tokenRefreshInterval);
+      this.tokenRefreshInterval = null;
+      logger.info('⏰ Stopped periodic token refresh timer');
     }
   }
 
@@ -102,7 +159,7 @@ class SpotifyService {
           // Create new playlist
           logger.info(`📝 Creating new playlist: ${playlistName}`);
           try {
-            const response = await this.spotifyApi.createPlaylist(playlistName, {
+            const response = await this.makeSpotifyRequest(this.spotifyApi.createPlaylist, playlistName, {
               description: `Automatically curated tracks from Halloween Radio ${station} station`,
               public: false
             });
@@ -152,12 +209,12 @@ class SpotifyService {
         let response;
         try {
           // Try method 1: getUserPlaylists with user ID
-          response = await this.spotifyApi.getUserPlaylists(this.userId, { offset, limit });
+          response = await this.makeSpotifyRequest(this.spotifyApi.getUserPlaylists, this.userId, { offset, limit });
         } catch (error1) {
           logger.warn(`⚠️ Method 1 failed, trying method 2: ${error1.message}`);
           try {
             // Try method 2: getUserPlaylists without user ID  
-            response = await this.spotifyApi.getUserPlaylists({ offset, limit });
+            response = await this.makeSpotifyRequest(this.spotifyApi.getUserPlaylists, { offset, limit });
           } catch (error2) {
             logger.warn(`⚠️ Method 2 failed: ${error2.message}`);
             // If both methods fail, throw the original error
@@ -220,7 +277,7 @@ class SpotifyService {
       
       // First pass: identify tracks and duplicates
       while (true) {
-        const response = await this.spotifyApi.getPlaylistTracks(playlistId, { offset, limit });
+        const response = await this.makeSpotifyRequest(this.spotifyApi.getPlaylistTracks, playlistId, { offset, limit });
         const tracks = (response.body || response).items || [];
         
         tracks.forEach((item, index) => {
@@ -262,7 +319,7 @@ class SpotifyService {
         // Collect all tracks again in order for rebuilding
         offset = 0;
         while (true) {
-          const response = await this.spotifyApi.getPlaylistTracks(playlistId, { offset, limit: 100 });
+          const response = await this.makeSpotifyRequest(this.spotifyApi.getPlaylistTracks, playlistId, { offset, limit: 100 });
           const tracks = (response.body || response).items || [];
           
           tracks.forEach(item => {
@@ -283,12 +340,12 @@ class SpotifyService {
         
         // Clear the playlist completely
         logger.info(`🧹 Clearing entire playlist...`);
-        await this.spotifyApi.replaceTracksInPlaylist(playlistId, []);
+        await this.makeSpotifyRequest(this.spotifyApi.replaceTracksInPlaylist, playlistId, []);
         
         // Add back only unique tracks
         if (allTracks.length > 0) {
           logger.info(`➕ Adding back ${allTracks.length} unique tracks...`);
-          await this.spotifyApi.addTracksToPlaylist(playlistId, allTracks);
+          await this.makeSpotifyRequest(this.spotifyApi.addTracksToPlaylist, playlistId, allTracks);
         }
         
         logger.info(`✅ Playlist rebuilt: removed ${duplicatePositions.length} duplicates, kept ${allTracks.length} unique tracks`);
@@ -323,7 +380,7 @@ class SpotifyService {
       // Try each search strategy until we find results
       for (const query of searchQueries) {
         try {
-          const searchResults = await this.spotifyApi.searchTracks(query, { limit: 20 });
+          const searchResults = await this.makeSpotifyRequest(this.spotifyApi.searchTracks, query, { limit: 20 });
           const currentTracks = ((searchResults.body || searchResults).tracks || {}).items || [];
           
           if (currentTracks.length > 0) {
@@ -371,7 +428,7 @@ class SpotifyService {
       }
       
       try {
-        await this.spotifyApi.addTracksToPlaylist(playlist.id, [`spotify:track:${bestMatch.track.id}`]);
+        await this.makeSpotifyRequest(this.spotifyApi.addTracksToPlaylist, playlist.id, [`spotify:track:${bestMatch.track.id}`]);
       } catch (playlistError) {
         logger.error(`❌ Failed to add track to Spotify playlist: ${playlistError.message}`);
         await this.logUnmatchedTrack(station, metadata, `Spotify API error: ${playlistError.message}`, [], bestMatch);
@@ -588,20 +645,18 @@ class SpotifyService {
         
         if (playlists.length === 0) break;
         
-        for (const playlist of playlists) {
-          if (playlist.name.startsWith('Halloween Radio - ')) {
-            try {
-              logger.info(`🗑️ Deleting playlist: ${playlist.name} (${playlist.id})`);
-              await this.spotifyApi.unfollowPlaylist(playlist.id);
-              deletedPlaylists.push(playlist.name);
-              deletedCount++;
-            } catch (deleteError) {
-              logger.error(`❌ Failed to delete playlist ${playlist.name}:`, deleteError.message);
-            }
+      for (const playlist of playlists) {
+        if (playlist.name.startsWith('Halloween Radio - ')) {
+          try {
+            logger.info(`🗑️ Deleting playlist: ${playlist.name} (${playlist.id})`);
+            await this.makeSpotifyRequest(this.spotifyApi.unfollowPlaylist, playlist.id);
+            deletedPlaylists.push(playlist.name);
+            deletedCount++;
+          } catch (deleteError) {
+            logger.error(`❌ Failed to delete playlist ${playlist.name}:`, deleteError.message);
           }
         }
-        
-        if (playlists.length < limit) break;
+      }        if (playlists.length < limit) break;
         offset += limit;
       }
       
@@ -695,7 +750,7 @@ class SpotifyService {
       
       // First pass: identify duplicates
       while (true) {
-        const response = await this.spotifyApi.getPlaylistTracks(playlistId, { offset, limit });
+        const response = await this.makeSpotifyRequest(this.spotifyApi.getPlaylistTracks, playlistId, { offset, limit });
         const tracks = (response.body || response).items || [];
         
         tracks.forEach((item, index) => {
@@ -724,7 +779,7 @@ class SpotifyService {
       
       for (const position of duplicatePositions) {
         try {
-          await this.spotifyApi.removeTracksFromPlaylist(playlistId, [{ positions: [position] }]);
+          await this.makeSpotifyRequest(this.spotifyApi.removeTracksFromPlaylist, playlistId, [{ positions: [position] }]);
           removedCount++;
           
           // Add small delay to avoid rate limiting
@@ -756,7 +811,7 @@ class SpotifyService {
       
       // Find all Halloween Radio playlists
       while (true) {
-        const response = await this.spotifyApi.getUserPlaylists(this.userId, { offset, limit });
+        const response = await this.makeSpotifyRequest(this.spotifyApi.getUserPlaylists, this.userId, { offset, limit });
         const playlists = (response.body?.items || response.items || []);
         
         if (playlists.length === 0) break;
@@ -801,7 +856,7 @@ class SpotifyService {
             for (const trackId of duplicateTracks) {
               if (!allTracks.has(trackId)) {
                 try {
-                  await this.spotifyApi.addTracksToPlaylist(primaryPlaylist.id, [`spotify:track:${trackId}`]);
+                  await this.makeSpotifyRequest(this.spotifyApi.addTracksToPlaylist, primaryPlaylist.id, [`spotify:track:${trackId}`]);
                   allTracks.add(trackId);
                   logger.info(`➕ Added track ${trackId} to primary playlist`);
                 } catch (addError) {
@@ -812,7 +867,7 @@ class SpotifyService {
             
             // Delete the duplicate playlist
             try {
-              await this.spotifyApi.unfollowPlaylist(duplicate.id);
+              await this.makeSpotifyRequest(this.spotifyApi.unfollowPlaylist, duplicate.id);
               logger.info(`🗑️ Deleted duplicate playlist: ${duplicate.name}`);
             } catch (deleteError) {
               logger.warn(`⚠️ Failed to delete duplicate ${duplicate.name}:`, deleteError.message);
@@ -850,7 +905,7 @@ class SpotifyService {
     const limit = 100;
     
     while (true) {
-      const response = await this.spotifyApi.getPlaylistTracks(playlistId, { offset, limit });
+      const response = await this.makeSpotifyRequest(this.spotifyApi.getPlaylistTracks, playlistId, { offset, limit });
       const tracks = (response.body || response).items || [];
       
       tracks.forEach(item => {
@@ -1025,6 +1080,9 @@ class SpotifyService {
   }
 
   async close() {
+    // Stop the token refresh timer
+    this.stopTokenRefreshTimer();
+    
     if (this.database) {
       await this.database.close();
     }
