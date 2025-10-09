@@ -155,6 +155,8 @@
             gap: 16px;
             flex: 1;
             overflow: hidden;
+            height: calc(100vh - 420px); /* Dynamic height based on viewport */
+            min-height: 400px;
         }
         
         .card {
@@ -1103,9 +1105,24 @@
             }
         }
 
+        @media (max-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(7, 1fr);
+                gap: 8px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 6px;
+                margin-bottom: 8px;
+            }
+        }
+
         @media (max-width: 600px) {
             .stats-grid {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: repeat(2, 1fr);
                 gap: 4px;
                 margin-bottom: 6px;
             }
@@ -1354,6 +1371,7 @@
                                     <input type="number" id="unmatchedMaxPercent" value="74" min="0" max="100">
                                 </div>
                                 <button class="btn compact" onclick="filterUnmatched()">Filter</button>
+                                <button class="btn compact" onclick="exportUnmatchedToCSV()" style="margin-left: 8px;">📁 Export CSV</button>
                             </div>
                         </h3>
                         <div class="station-tabs" id="unmatchedStationTabs">
@@ -1543,23 +1561,16 @@
             // Update last matched track timestamp
             if (data.lastMatchedTrackTimestamp) {
                 const lastMatchedDate = new Date(data.lastMatchedTrackTimestamp);
-                const now = new Date();
-                const diffMs = now - lastMatchedDate;
-                const diffMins = Math.floor(diffMs / 60000);
-                const diffHours = Math.floor(diffMins / 60);
-                const diffDays = Math.floor(diffHours / 24);
                 
-                let timeAgo;
-                if (diffDays > 0) {
-                    timeAgo = `${diffDays}d ago`;
-                } else if (diffHours > 0) {
-                    timeAgo = `${diffHours}h ago`;
-                } else if (diffMins > 0) {
-                    timeAgo = `${diffMins}m ago`;
-                } else {
-                    timeAgo = 'Just now';
-                }
-                document.getElementById('lastMatched').textContent = timeAgo;
+                // Format as MM-DD-YY @ HH:MM
+                const month = String(lastMatchedDate.getMonth() + 1).padStart(2, '0');
+                const day = String(lastMatchedDate.getDate()).padStart(2, '0');
+                const year = String(lastMatchedDate.getFullYear()).slice(-2);
+                const hours = String(lastMatchedDate.getHours()).padStart(2, '0');
+                const minutes = String(lastMatchedDate.getMinutes()).padStart(2, '0');
+                
+                const formattedTime = `${month}-${day}-${year} @ ${hours}:${minutes}`;
+                document.getElementById('lastMatched').textContent = formattedTime;
             } else {
                 document.getElementById('lastMatched').textContent = 'Never';
             }
@@ -1802,6 +1813,50 @@
             unmatchedCurrentPage = 1;
             updateStationTabsActive('unmatchedStationTabs', station);
             displayUnmatchedTracks(unmatchedTracksData);
+        }
+
+        function exportUnmatchedToCSV() {
+            if (!unmatchedTracksData || unmatchedTracksData.length === 0) {
+                alert('No unmatched tracks to export');
+                return;
+            }
+
+            // Apply current filters
+            const filteredTracks = getFilteredTracks(unmatchedTracksData, unmatchedCurrentStation);
+            
+            // CSV headers
+            const headers = ['Timestamp', 'Station', 'Artist', 'Title', 'Best Match %', 'Reason'];
+            
+            // Convert tracks to CSV format
+            const csvData = filteredTracks.map(track => {
+                const timestamp = new Date(track.timestamp).toLocaleString();
+                const station = track.station.toUpperCase();
+                const artist = track.metadata.artist.replace(/"/g, '""'); // Escape quotes
+                const title = track.metadata.title.replace(/"/g, '""'); // Escape quotes
+                const percentage = track.percentage || 0;
+                const reason = (track.reason || 'No suitable match found').replace(/"/g, '""');
+                
+                return `"${timestamp}","${station}","${artist}","${title}","${percentage}%","${reason}"`;
+            });
+            
+            // Combine headers and data
+            const csvContent = [headers.join(','), ...csvData].join('\n');
+            
+            // Create and download file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const station = unmatchedCurrentStation === 'all' ? 'all-stations' : unmatchedCurrentStation;
+            link.setAttribute('download', `halloween-radio-unmatched-${station}-${dateStr}.csv`);
+            
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function changeMatchedPage(direction) {
