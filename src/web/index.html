@@ -1268,28 +1268,24 @@
                     <div class="stat-label">Last Matched Track</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number" id="totalTracks">-</div>
-                    <div class="stat-label">Total Tracks Added</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="totalUnmatched">-</div>
-                    <div class="stat-label">Total Tracks Unmatched</div>
+                    <div class="stat-number" id="totalTracks">- | -</div>
+                    <div class="stat-label">Total Added | Unmatched</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number" id="mainTracks">- | -</div>
-                    <div class="stat-label">Main Tracks | Unmatched</div>
+                    <div class="stat-label">Main | Unmatched</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number" id="moviesTracks">- | -</div>
-                    <div class="stat-label">Movies Tracks | Unmatched</div>
+                    <div class="stat-label">Movies | Unmatched</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number" id="oldiesTracks">- | -</div>
-                    <div class="stat-label">Oldies Tracks | Unmatched</div>
+                    <div class="stat-label">Oldies | Unmatched</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number" id="kidsTracks">- | -</div>
-                    <div class="stat-label">Kids Tracks | Unmatched</div>
+                    <div class="stat-label">Kids | Unmatched</div>
                 </div>
             </div>
         </div>
@@ -1539,14 +1535,10 @@
             const connectedCount = Object.values(data.stations).filter(s => s.connected).length;
             document.getElementById('connectedStations').textContent = connectedCount;
             document.getElementById('playlists').textContent = data.playlists ? data.playlists.length : 0;
-            document.getElementById('totalTracks').textContent = data.addedTracksCount || 0;
-            
-            // Update unmatched counts
-            if (data.unmatchedTrackCounts) {
-                document.getElementById('totalUnmatched').textContent = data.unmatchedTrackCounts.total || 0;
-            } else {
-                document.getElementById('totalUnmatched').textContent = '-';
-            }
+            // Update combined total tracks (added | unmatched)
+            const totalAdded = data.addedTracksCount || 0;
+            const totalUnmatched = data.unmatchedTrackCounts ? data.unmatchedTrackCounts.total || 0 : 0;
+            document.getElementById('totalTracks').textContent = `${totalAdded} | ${totalUnmatched}`;
             
             // Update last matched track timestamp
             if (data.lastMatchedTrackTimestamp) {

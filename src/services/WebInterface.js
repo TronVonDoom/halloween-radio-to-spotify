@@ -114,10 +114,11 @@ class WebInterface {
 
     this.app.get('/api/tracks/unmatched', async (req, res) => {
       try {
-        // Remove pagination for unmatched tracks - show all
+        // Get ALL unmatched tracks - no pagination
         const station = req.query.station || null;
         
-        const tracks = await this.spotifyService.getUnmatchedTracks(null, 0, station);
+        // Use a large limit to get all tracks
+        const tracks = await this.spotifyService.getUnmatchedTracks(10000, 0, station);
         
         // Convert database format to web interface format for compatibility
         const formattedTracks = tracks.map(track => ({
