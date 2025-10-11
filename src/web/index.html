@@ -135,8 +135,8 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 12px;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 10px;
             margin-bottom: 16px;
             flex-shrink: 0;
             transition: var(--transition);
@@ -215,7 +215,7 @@
         .stat-card {
             background: var(--card-bg);
             border-radius: var(--border-radius);
-            padding: 16px;
+            padding: 12px 8px;
             text-align: center;
             border: 1px solid var(--border-color);
             backdrop-filter: blur(20px);
@@ -1107,12 +1107,12 @@
 
         @media (max-width: 1200px) {
             .stats-grid {
-                grid-template-columns: repeat(7, 1fr);
+                grid-template-columns: repeat(8, 1fr);
                 gap: 8px;
             }
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 1000px) {
             .stats-grid {
                 grid-template-columns: repeat(4, 1fr);
                 gap: 6px;

@@ -498,8 +498,7 @@ class DatabaseService {
     try {
       const query = `
         SELECT timestamp 
-        FROM tracks 
-        WHERE status = 'matched' 
+        FROM matched_tracks 
         ORDER BY timestamp DESC 
         LIMIT 1
       `;
@@ -515,15 +514,13 @@ class DatabaseService {
     try {
       const totalQuery = `
         SELECT COUNT(*) as count 
-        FROM tracks 
-        WHERE status = 'unmatched'
+        FROM unmatched_tracks
       `;
       const totalResult = await this.db.get(totalQuery);
       
       const stationQuery = `
         SELECT station, COUNT(*) as count 
-        FROM tracks 
-        WHERE status = 'unmatched' 
+        FROM unmatched_tracks 
         GROUP BY station
       `;
       const stationResults = await this.db.all(stationQuery);
